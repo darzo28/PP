@@ -12,8 +12,6 @@ using namespace std;
 #undef min
 #undef max
 
-//const int ITER_COUNT = 2;
-
 typedef struct
 {
 	uint8_t r, g, b, a;
@@ -274,11 +272,6 @@ DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
 		params->endWidth = ((params->number + 1) * params->partWidth) + (params->number == params->countThreads - 1
 			? params->wRemaining : 0);
 
-		/*for (int i = 0; i < ITER_COUNT; i++)
-		{
-			blur(params->init_bmp, params->blur_bmp, 5, params);
-		}*/
-
 		blur(params->init_bmp, params->blur_bmp, 5, params);
 	}
 	ExitThread(0);
@@ -326,37 +319,8 @@ void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsC
 
 int main(int argc, const char** argv)
 {
-	for (int i = 1; i <= 4; i++)
-	{
-		for (int j = 1; j <= 16; j++)
-		{
-			DWORD start = timeGetTime();
-
-			if (strcmp(argv[1], "/") == 0)
-			{
-				cout << "Example: Lab2.exe input.bmp output.bmp 3 3" << endl;
-				cout << "1 argument - input bmp file" << endl;
-				cout << "2 argument - output bmp file" << endl;
-				cout << "3 argument - threads count" << endl;
-				cout << "4 argument - core count" << endl;
-
-				exit(0);
-			}
-
-			int threads_count = j;
-
-			bitmap init_bmp{ argv[1] };
-			bitmap blur_bmp{ argv[1] };
-
-			threads_runner(&init_bmp, &blur_bmp, 5, threads_count, i);
-
-			blur_bmp.save(argv[2]);
-
-			cout << i << " - " << j << ": " << timeGetTime() - start << endl;
-		}
-	}
-
-	/*DWORD start = timeGetTime();
+	
+	DWORD start = timeGetTime();
 
 	if (strcmp(argv[1], "/") == 0)
 	{
@@ -378,7 +342,7 @@ int main(int argc, const char** argv)
 
 	blur_bmp.save(argv[2]);
 
-	cout << timeGetTime() - start << endl;*/
+	cout << timeGetTime() - start << endl;
 
 	return 0;
 }
