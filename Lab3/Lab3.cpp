@@ -8,17 +8,18 @@
 using namespace std;
 
 DWORD start = 0;
-const string FILE_NAME = "out.txt";
 
 DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
 {
 	const auto threadNumber = *(int*)lpParam;
 	ofstream out;
-
-	for (int i = 0; i < 25; i++)
+	string file_name = "out" + to_string(threadNumber) + ".txt";
+	
+	for (int i = 0; i < 10; i++)
 	{
-		out.open(FILE_NAME, ios::app);
-		out << threadNumber << "|" << (int)(timeGetTime() - start) << endl;
+		out.open(file_name, ios::app | ios::ate);
+		DWORD end = (int)(timeGetTime() - start);
+		out << threadNumber << "|" << end << endl;
 		out.close();
 	}
 

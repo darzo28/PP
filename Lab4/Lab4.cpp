@@ -1,4 +1,4 @@
-﻿#include <algorithm>
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -11,6 +11,8 @@ using namespace std;
 
 #undef min
 #undef max
+
+DWORD start = 0;
 
 typedef struct
 {
@@ -222,6 +224,7 @@ struct Params
 	int countThreads;
 	int hRemaining;
 	int wRemaining;
+	ofstream* out;
 };
 
 void blur(bitmap* init_bmp, bitmap* blur_bmp, int radius, Params* params)
@@ -257,6 +260,8 @@ void blur(bitmap* init_bmp, bitmap* blur_bmp, int radius, Params* params)
 			pixel->r = round(r / count);
 			pixel->g = round(g / count);
 			pixel->b = round(b / count);
+
+			*params->out << params->number << "   " << (int)(timeGetTime() - start) << endl;
 		}
 	}
 }
@@ -269,15 +274,13 @@ DWORD WINAPI ThreadProc(CONST LPVOID lpParam)
 		params->startHeight = params->partHeight * i;
 		params->endHeight = (params->partHeight * (i + 1)) + (i == params->countThreads - 1 ? params->hRemaining : 0);
 		params->startWidth = params->number * params->partWidth;
-		params->endWidth = ((params->number + 1) * params->partWidth) + (params->number == params->countThreads - 1
-			? params->wRemaining : 0);
-
+		params->endWidth = ((params->number + 1) * params->partWidth) + (params->number == params->countThreads - 1 ? params->wRemaining : 0);
 		blur(params->init_bmp, params->blur_bmp, 5, params);
 	}
 	ExitThread(0);
 }
 
-void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsCount, int coreCount)
+void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsCount, int coreCount, int* priorities)
 {
 	int partWidth = init_bmp->getWidth() / threadsCount;
 	int partHeight = init_bmp->getHeight() / threadsCount;
@@ -287,9 +290,12 @@ void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsC
 	int h = init_bmp->getHeight() - partHeight * threadsCount;
 	int heightRemaining = max(h, 0);
 
+	ofstream* files = new ofstream[threadsCount];
+
 	Params* arrayParams = new Params[threadsCount];
 	for (int i = 0; i < threadsCount; i++)
 	{
+		files[i] = ofstream("out" + to_string(i) + ".txt");
 		Params params;
 		params.init_bmp = init_bmp;
 		params.blur_bmp = blur_bmp;
@@ -299,6 +305,7 @@ void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsC
 		params.number = i;
 		params.hRemaining = heightRemaining;
 		params.wRemaining = widthRemaining;
+		params.out = &files[i];
 		arrayParams[i] = params;
 	}
 
@@ -307,6 +314,7 @@ void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsC
 	{
 		handles[i] = CreateThread(NULL, i, &ThreadProc, &arrayParams[i], CREATE_SUSPENDED, NULL);
 		SetThreadAffinityMask(handles[i], (1 << coreCount) - 1);
+		SetThreadPriority(handles[i], priorities[i]);
 	}
 
 	for (int i = 0; i < threadsCount; i++)
@@ -319,16 +327,19 @@ void threads_runner(bitmap* init_bmp, bitmap* blur_bmp, int radius, int threadsC
 
 int main(int argc, const char** argv)
 {
-	
-	DWORD start = timeGetTime();
+	start = timeGetTime();
 
 	if (strcmp(argv[1], "/?") == 0)
 	{
-		cout << "Example: Lab2.exe input.bmp output.bmp 3 3" << endl;
+		cout << "Example: Lab4.exe input.bmp output.bmp 3 3 0 0 0" << endl;
 		cout << "1 argument - input bmp file" << endl;
 		cout << "2 argument - output bmp file" << endl;
 		cout << "3 argument - threads count" << endl;
 		cout << "4 argument - core count" << endl;
+		cout << "Priority: `-1` - below_normal; `0` - normal; `1` - above_normal" << endl;
+		cout << "5 argument - first thread priority" << endl;
+		cout << "6 argument - second thread priority" << endl;
+		cout << "7 argument - third thread priority" << endl;
 
 		exit(0);
 	}
@@ -338,11 +349,15 @@ int main(int argc, const char** argv)
 	bitmap init_bmp{ argv[1] };
 	bitmap blur_bmp{ argv[1] };
 
-	threads_runner(&init_bmp, &blur_bmp, 5, threads_count, atoi(argv[4]));
+	int* priorities = new int[threads_count];
+	for (int i = 0; i < threads_count; i++)
+	{
+		priorities[i] = atoi(argv[i + 5]);
+	}
+
+	threads_runner(&init_bmp, &blur_bmp, 5, threads_count, atoi(argv[4]), priorities);
 
 	blur_bmp.save(argv[2]);
-
-	cout << timeGetTime() - start << endl;
 
 	return 0;
 }
