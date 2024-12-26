@@ -71,7 +71,7 @@ class Program
             await using var fs = new FileStream(imagePath, FileMode.Create, FileAccess.Write, FileShare.None);
             await imageResponse.Content.CopyToAsync(fs);
 
-            Console.WriteLine($"Image from url: {imageUrl} dowload successfully");
+            Console.WriteLine($"Image from url: {imageUrl} download successfully");
         }
         catch (Exception e)
         {

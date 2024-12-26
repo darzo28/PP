@@ -21,8 +21,12 @@ class Program
             return;
         }
 
-        Console.WriteLine("Enter characters without spaces: ");
-        string charactersToRemove = Console.ReadLine();
+        string? charactersToRemove;
+        do
+        {
+            Console.WriteLine("Enter characters without spaces: ");
+            charactersToRemove = Console.ReadLine();
+        } while (String.IsNullOrEmpty(charactersToRemove));
 
         string fileContent = await File.ReadAllTextAsync(filePath);
 
